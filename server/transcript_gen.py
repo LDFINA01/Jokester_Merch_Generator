@@ -80,7 +80,7 @@ def censor_text(text):
     cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', text)
     return profanity.censor(cleaned)
 
-def generate_image(transcript, frame_path, important_phrase):
+def generate_image(transcript, frame_path, important_phrase, theme=None):
     transcript = censor_text(transcript)
     important_phrase = censor_text(important_phrase)
 
@@ -89,8 +89,8 @@ def generate_image(transcript, frame_path, important_phrase):
         f"Transform this frame into a vibrant, merch-worthy logo inspired by the comedic transcript: {transcript}. "
         f"If a comedian appears in the frame, include and stylize them as a central, recognizable character — expressive, confident, and part of the design. "
         f"Feature the key phrase '{important_phrase}' prominently in a creative, bold typography style that complements the art. "
-        f"Use a colorful, high-energy, artistic style that would look great on stickers, t-shirts, or mugs. "
-        f"Maintain the humor and personality of the moment."
+        f"Use a {theme if theme else "colorful, high-energy, artistic"} style that would look great on stickers, t-shirts, or mugs. "
+        f"Maintain the humor and personality of the moment. Avoid missing fingers, extra arms, or anything not ordinary in the human form."
     )
 
 
@@ -156,4 +156,4 @@ if __name__ == "__main__":
 
     extract_image(frame_json, video_path=video_file_path, output_path=extracted_frame_path)
     
-    generate_image(transcript, extracted_frame_path, frame_json["phrase"])
+    generate_image(transcript, extracted_frame_path, frame_json["phrase"], theme="Dark and sad")

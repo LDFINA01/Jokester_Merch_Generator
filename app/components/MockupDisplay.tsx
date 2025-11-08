@@ -12,7 +12,6 @@ interface MockupDisplayProps {
 
 const products = [
   { name: 'Classic Mug', key: 'mug' as const, description: '11oz ceramic mug' },
-  { name: 'Unisex T-Shirt', key: 'shirt' as const, description: 'Premium cotton tee' },
 ];
 
 export default function MockupDisplay({ mockups, isLoading }: MockupDisplayProps) {
@@ -24,11 +23,11 @@ export default function MockupDisplay({ mockups, isLoading }: MockupDisplayProps
     <div className="w-full">
       <h2 className="text-3xl font-bold mb-8 text-center">Your Merch Mockups</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div className="flex justify-center max-w-2xl mx-auto">
         {products.map((product) => (
           <div
             key={product.key}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 w-full"
           >
             <div className="aspect-square relative bg-gray-100 dark:bg-gray-900">
               {isLoading ? (

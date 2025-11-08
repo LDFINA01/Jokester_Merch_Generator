@@ -34,6 +34,14 @@ export interface Upload {
   };
   user_identifier?: string;
   theme?: string;
+  shopify_product_ids?: {
+    mug?: string;
+    shirt?: string;
+  };
+  shopify_product_urls?: {
+    mug?: string;
+    shirt?: string;
+  };
 }
 
 // Helper function to create upload record
@@ -71,6 +79,41 @@ export async function getUploadById(id: string) {
     .from('uploads')
     .select('*')
     .eq('id', id)
+    .single();
+
+  if (error) throw error;
+  return data as Upload;
+}
+
+// Helper function to update upload with Shopify product info
+export async function updateUploadShopifyInfo(
+  id: string,
+  productType: 'mug' | 'shirt',
+  shopifyProductId: string,
+  shopifyProductUrl: string
+) {
+  const { data: existingUpload, error: fetchError } = await supabaseAdmin
+    .from('uploads')
+    .select('shopify_product_ids, shopify_product_urls')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  const shopifyProductIds = existingUpload?.shopify_product_ids || {};
+  const shopifyProductUrls = existingUpload?.shopify_product_urls || {};
+
+  shopifyProductIds[productType] = shopifyProductId;
+  shopifyProductUrls[productType] = shopifyProductUrl;
+
+  const { data, error } = await supabaseAdmin
+    .from('uploads')
+    .update({
+      shopify_product_ids: shopifyProductIds,
+      shopify_product_urls: shopifyProductUrls,
+    })
+    .eq('id', id)
+    .select()
     .single();
 
   if (error) throw error;

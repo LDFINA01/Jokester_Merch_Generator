@@ -96,4 +96,5 @@ def process():
         return jsonify({"error": f"Error: {str(error)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.getenv("PORT", 5000))  # Use Render's PORT or default to 5000 for local
+    app.run(host="0.0.0.0", port=port)

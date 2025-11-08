@@ -9,6 +9,7 @@ interface VideoUploadProps {
 export default function VideoUpload({ onUploadComplete }: VideoUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [processingStage, setProcessingStage] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,11 +30,13 @@ export default function VideoUpload({ onUploadComplete }: VideoUploadProps) {
   const uploadFile = async (file: File) => {
     setError(null);
     setIsUploading(true);
+    setProcessingStage('Uploading video...');
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
+      setProcessingStage('Uploading video to cloud storage...');
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -44,13 +47,17 @@ export default function VideoUpload({ onUploadComplete }: VideoUploadProps) {
         throw new Error(errorData.error || 'Upload failed');
       }
 
+      setProcessingStage('Processing video (this may take 30-60 seconds)...');
       const data = await response.json();
+      
+      setProcessingStage('Generating mockups...');
       onUploadComplete(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload video');
       setPreview(null);
     } finally {
       setIsUploading(false);
+      setProcessingStage(null);
     }
   };
 
@@ -135,11 +142,21 @@ export default function VideoUpload({ onUploadComplete }: VideoUploadProps) {
               className="max-h-64 mx-auto rounded-lg shadow-md"
             />
             {isUploading && (
-              <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Uploading...
-                </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <p className="text-gray-600 dark:text-gray-400 font-medium">
+                    {processingStage || 'Processing...'}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    This includes transcription, moment detection, and AI image generation
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    Please wait, this may take up to 2 minutes
+                  </p>
+                </div>
               </div>
             )}
           </div>

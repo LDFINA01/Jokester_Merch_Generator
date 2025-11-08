@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import VideoUpload from './components/VideoUpload';
+import MediaUpload from './components/MediaUpload';
 import MockupDisplay from './components/MockupDisplay';
 
 interface Upload {
@@ -12,6 +12,7 @@ interface Upload {
     mug: string;
     shirt: string;
   };
+  theme?: string;
 }
 
 export default function Home() {
@@ -42,7 +43,7 @@ export default function Home() {
     }
   };
 
-  const handleUploadComplete = async (imageUrl: string) => {
+  const handleUploadComplete = async (imageUrl: string, theme?: string) => {
     setIsGenerating(true);
     setCurrentMockups(null);
 
@@ -52,7 +53,10 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageUrl }),
+        body: JSON.stringify({ 
+          imageUrl,
+          theme: theme || undefined 
+        }),
       });
 
       if (!response.ok) {
@@ -98,7 +102,7 @@ export default function Home() {
 
         {/* Upload Section */}
         <section className="max-w-2xl mx-auto mb-16">
-          <VideoUpload onUploadComplete={handleUploadComplete} />
+          <MediaUpload onUploadComplete={handleUploadComplete} />
         </section>
 
         {/* Mockup Display */}

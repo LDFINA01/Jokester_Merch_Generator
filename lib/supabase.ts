@@ -33,6 +33,7 @@ export interface Upload {
     blanket: string;
   };
   user_identifier?: string;
+  theme?: string;
 }
 
 // Helper function to create upload record
@@ -40,6 +41,7 @@ export async function createUpload(data: {
   original_image_url: string;
   mockup_urls: Upload['mockup_urls'];
   user_identifier?: string;
+  theme?: string;
 }) {
   const { data: upload, error } = await supabaseAdmin
     .from('uploads')

@@ -4,7 +4,7 @@ import os
 import time
 import requests
 
-from transcript_gen import identify_important_word, extract_image, transcribe_with_timestamps, generate_image
+from transcript_gen import identify_important_word, extract_image, transcribe_with_timestamps, generate_image, check_image_for_issues, revise_image
 from database_ops import upload_to_vercel_blob 
 
 app = Flask(__name__)
@@ -74,6 +74,15 @@ def process():
             print("Image generation failed - no path returned")
             return jsonify({"error": "Image generation failed"}), 500
         print(f"Image generated: {generated_image_path}")
+
+        # ensure image is generated properly 
+        if check_image_for_issues(generated_image_path) == "YES":
+            print("Issues detected. Revising image...")
+            revised_path = revise_image(generated_image_path, transcript_data, important_word_data["phrase"], theme=theme)
+            if revised_path:
+                generated_image_path = revised_path  # Use the revised image
+            else:
+                print("Revision failed; using original image.")
         
         # Upload the generated image to Vercel Blob
         print("Uploading generated image to Vercel Blob...")

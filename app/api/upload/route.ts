@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
     const flaskPayload = { video_url: blob.url };
     console.log('Sending to Flask:', JSON.stringify(flaskPayload));
     
-    const flaskResponse = await fetch('https://jokester-merch-generator.onrender.com/process', {
+    const flaskResponse = await fetch('https://jokester-merch-generator-whxg.onrender.com/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(flaskPayload),
-      signal: AbortSignal.timeout(120000), // 120 second timeout
+      signal: AbortSignal.timeout(300000), // 5 minute timeout (for cold starts + processing)
     });
     
     if (!flaskResponse.ok) {

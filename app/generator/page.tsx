@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, Clock, Upload, Home } from 'lucide-react';
+import { Sparkles, Clock, Upload, Home, Trash2 } from 'lucide-react';
 import MediaUpload from '../components/MediaUpload';
 import MockupDisplay from '../components/MockupDisplay';
 import ProductSelector from '../components/ProductSelector';
@@ -21,6 +21,7 @@ export default function Generator() {
   const [currentUploadId, setCurrentUploadId] = useState<string | null>(null);
   const [history, setHistory] = useState<Upload[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   // Fetch upload history on mount
   useEffect(() => {
@@ -66,6 +67,43 @@ export default function Generator() {
       hour: 'numeric',
       minute: '2-digit',
     }).format(date);
+  };
+
+  const handleDeleteUpload = async (uploadId: string) => {
+    if (!confirm('Are you sure you want to delete this upload?')) {
+      return;
+    }
+
+    setDeletingIds(prev => new Set(prev).add(uploadId));
+
+    try {
+      const response = await fetch(`/api/history/${uploadId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete upload');
+      }
+
+      // Remove from history state
+      setHistory(prev => prev.filter(upload => upload.id !== uploadId));
+
+      // If the deleted upload is currently being viewed, clear it
+      if (currentUploadId === uploadId) {
+        setCurrentImageUrl(null);
+        setCurrentMockups({});
+        setCurrentUploadId(null);
+      }
+    } catch (error) {
+      console.error('Error deleting upload:', error);
+      alert('Failed to delete upload. Please try again.');
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(uploadId);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -174,6 +212,18 @@ export default function Generator() {
                         alt="Generated image"
                         className="absolute inset-0 w-full h-full object-cover"
                       />
+                      <button
+                        onClick={() => handleDeleteUpload(upload.id)}
+                        disabled={deletingIds.has(upload.id)}
+                        className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
+                        title="Delete upload"
+                      >
+                        {deletingIds.has(upload.id) ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
                     
                     <div className="p-4">

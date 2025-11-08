@@ -110,3 +110,14 @@ export async function updateUploadShopifyInfo(
   return data as Upload;
 }
 
+// Helper function to delete an upload
+export async function deleteUpload(id: string) {
+  const { error } = await supabaseAdmin
+    .from('uploads')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+

@@ -1,8 +1,7 @@
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
-import supabase
 import os
-
+import time
 import requests
 
 from transcript_gen import identify_important_word, extract_image, transcribe_with_timestamps, generate_image
@@ -18,25 +17,21 @@ def home():
 @app.route("/process", methods=["POST"])
 def process():
     try:
-        # Get the Supabase video index from the request
+        # Get the video URL from the request
         data = request.get_json()
-        video_index = data.get('video_index')
+        video_url = data.get('video_url')
         theme = data.get('theme')
-        if not video_index:
-            return jsonify({"error": "Missing video_index"}), 400
-        
-        # Initialize Supabase client (assuming SUPABASE_URL and SUPABASE_KEY are in env)
-        supabase_client = supabase.create_client(
-            os.getenv("SUPABASE_URL"),
-            os.getenv("SUPABASE_KEY")
-        )
-        
-        # Download the video from Supabase storage
-        # Assuming videos are stored in a 'videos' bucket with the index as filename
-        video_path = f"/tmp/{video_index}.mp4"  # Temporary local path
+        if not video_url:
+            return jsonify({"error": "Missing video_url"}), 400
+
+        # Download the video from the URL
+        timestamp = int(time.time())
+        video_path = f"/tmp/{timestamp}.mp4"  # Temporary local path
+        response = requests.get(video_url)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to download video"}), 500
         with open(video_path, 'wb') as f:
-            response = supabase_client.storage.from_('videos').download(video_index)
-            f.write(response)
+            f.write(response.content)
         
         # Process the video: transcribe, identify important word, extract/generate image
         transcript_data, word_timestamps = transcribe_with_timestamps(video_path)
@@ -60,7 +55,7 @@ def process():
             return jsonify({"error": "Image generation failed"}), 500
         
         # Upload the generated image to Vercel Blob
-        blob_url = upload_to_vercel_blob(generated_image_path, f"{video_index}_generated.png")
+        blob_url = upload_to_vercel_blob(generated_image_path, f"{timestamp}_generated.png")
         
         # Clean up temporary files
         os.remove(video_path)

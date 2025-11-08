@@ -2,25 +2,25 @@
 
 import { useState, useCallback, ChangeEvent, DragEvent } from 'react';
 
-interface ImageUploadProps {
+interface VideoUploadProps {
   onUploadComplete: (imageUrl: string) => void;
 }
 
-export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
+export default function VideoUpload({ onUploadComplete }: VideoUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const validateFile = (file: File): string | null => {
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    const validTypes = ['video/mp4', 'video/quicktime', 'video/avi'];
     if (!validTypes.includes(file.type)) {
-      return 'Please upload a JPEG, PNG, or WebP image.';
+      return 'Please upload a MP4, MOV, or AVI video.';
     }
 
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
-      return 'File size must be less than 10MB.';
+      return 'File size must be less than 100MB.';
     }
 
     return null;
@@ -47,7 +47,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
       const data = await response.json();
       onUploadComplete(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload image');
+      setError(err instanceof Error ? err.message : 'Failed to upload video');
       setPreview(null);
     } finally {
       setIsUploading(false);
@@ -62,11 +62,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
     }
 
     // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setPreview(URL.createObjectURL(file));
 
     // Upload file
     uploadFile(file);
@@ -124,16 +120,18 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
           type="file"
           id="file-upload"
           className="hidden"
-          accept="image/jpeg,image/png,image/jpg,image/webp"
+          accept="video/mp4,video/quicktime,video/avi"
           onChange={handleFileInput}
           disabled={isUploading}
         />
 
         {preview ? (
           <div className="space-y-4">
-            <img
+            <video
               src={preview}
-              alt="Preview"
+              controls
+              muted
+              playsInline
               className="max-h-64 mx-auto rounded-lg shadow-md"
             />
             {isUploading && (
@@ -155,7 +153,7 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
               aria-hidden="true"
             >
               <path
-                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                d="M16 4v24l20-12L16 4z"
                 strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -166,11 +164,11 @@ export default function ImageUpload({ onUploadComplete }: ImageUploadProps) {
                 htmlFor="file-upload"
                 className="relative cursor-pointer rounded-md font-semibold text-blue-600 hover:text-blue-500 focus-within:outline-none"
               >
-                <span>Upload an image</span>
+                <span>Upload a video</span>
               </label>
               <p className="pl-1 inline">or drag and drop</p>
             </div>
-            <p className="text-xs text-gray-500">PNG, JPG, WebP up to 10MB</p>
+            <p className="text-xs text-gray-500">MP4, MOV, AVI up to 100MB</p>
           </div>
         )}
       </div>

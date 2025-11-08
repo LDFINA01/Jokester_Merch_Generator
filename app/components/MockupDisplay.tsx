@@ -52,6 +52,24 @@ const products = [
     description: 'Clear protective case',
     price: 22.99,
   },
+  { 
+    name: 'Sweatpants', 
+    key: 'sweatpants' as const, 
+    description: 'Unisex fleece sweatpants',
+    price: 44.99,
+  },
+  { 
+    name: 'Pillow', 
+    key: 'pillow' as const, 
+    description: '18"x18" all-over print',
+    price: 32.99,
+  },
+  { 
+    name: 'Square Sticker', 
+    key: 'sticker' as const, 
+    description: '3"x3" kiss-cut sticker',
+    price: 4.99,
+  },
 ];
 
 export default function MockupDisplay({ mockups, isLoading, uploadId }: MockupDisplayProps) {

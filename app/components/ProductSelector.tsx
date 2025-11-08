@@ -18,6 +18,9 @@ const availableProducts: Product[] = [
   { key: 'towel', name: 'Beach Towel', description: '30"x60" all-over print', price: 34.99, icon: '🏖️' },
   { key: 'hat', name: 'Dad Hat', description: 'Classic adjustable cap', price: 27.99, icon: '🧢' },
   { key: 'phone_case', name: 'iPhone Case', description: 'Clear protective case', price: 22.99, icon: '📱' },
+  { key: 'sweatpants', name: 'Sweatpants', description: 'Unisex fleece sweatpants', price: 44.99, icon: '👖' },
+  { key: 'pillow', name: 'Pillow', description: '18"x18" all-over print', price: 32.99, icon: '🛏️' },
+  { key: 'sticker', name: 'Square Sticker', description: '3"x3" kiss-cut sticker', price: 4.99, icon: '🏷️' },
 ];
 
 interface ProductSelectorProps {

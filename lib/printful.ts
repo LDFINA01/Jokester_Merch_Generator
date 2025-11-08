@@ -16,6 +16,9 @@ export const PRODUCT_IDS = {
   TOWEL: 259, // Beach Towel
   HAT: 206, // Classic Dad Hat
   PHONE_CASE: 181, // iPhone Clear Case
+  SWEATPANTS: 412, // Unisex Fleece Sweatpants
+  PILLOW: 214, // All-Over Print Premium Pillow
+  STICKER: 358, // Kiss-Cut Stickers (Square)
 };
 
 // Variant IDs (we'll use default sizes/colors)
@@ -27,6 +30,9 @@ export const VARIANT_IDS = {
   TOWEL: 8874, // 30"×60"
   HAT: 7854, // Black / One size
   PHONE_CASE: 17616, // iPhone 15
+  SWEATPANTS: 13838, // Dusty Rose / 2XL
+  PILLOW: 9515, // 18"×18"
+  STICKER: 10163, // 3"×3"
 };
 
 interface MockupRequest {
@@ -258,10 +264,19 @@ export async function generateSelectedMockups(imageUrl: string, selectedProducts
           mockupUrl = await generateMockup(PRODUCT_IDS.TOWEL, VARIANT_IDS.TOWEL, imageUrl, 'default');
           break;
         case 'hat':
-          mockupUrl = await generateMockup(PRODUCT_IDS.HAT, VARIANT_IDS.HAT, imageUrl, 'default');
+          mockupUrl = await generateMockup(PRODUCT_IDS.HAT, VARIANT_IDS.HAT, imageUrl, 'front_dtf_hat');
           break;
         case 'phone_case':
           mockupUrl = await generateMockup(PRODUCT_IDS.PHONE_CASE, VARIANT_IDS.PHONE_CASE, imageUrl, 'default');
+          break;
+        case 'sweatpants':
+          mockupUrl = await generateMockup(PRODUCT_IDS.SWEATPANTS, VARIANT_IDS.SWEATPANTS, imageUrl, 'embroidery_apparel_front');
+          break;
+        case 'pillow':
+          mockupUrl = await generateMockup(PRODUCT_IDS.PILLOW, VARIANT_IDS.PILLOW, imageUrl, 'front');
+          break;
+        case 'sticker':
+          mockupUrl = await generateMockup(PRODUCT_IDS.STICKER, VARIANT_IDS.STICKER, imageUrl, 'default');
           break;
         default:
           console.warn(`Unknown product type: ${productKey}`);

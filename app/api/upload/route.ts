@@ -5,6 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const theme = formData.get('theme') as string | null;
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
@@ -27,8 +28,11 @@ export async function POST(request: NextRequest) {
     const blob = await put(file.name, file, { access: 'public', addRandomSuffix: true });
     console.log('Video uploaded:', blob.url);
 
-    // POST to Flask with video_url
-    const flaskPayload = { video_url: blob.url };
+    // POST to Flask with video_url and theme if provided
+    const flaskPayload: { video_url: string; theme?: string } = { video_url: blob.url };
+    if (theme) {
+      flaskPayload.theme = theme;
+    }
     console.log('Sending to Flask:', JSON.stringify(flaskPayload));
     
     const flaskResponse = await fetch('https://jokester-merch-generator-whxg.onrender.com/process', {

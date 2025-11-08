@@ -20,6 +20,7 @@ export default function Home() {
     mug: string;
     shirt: string;
   } | null>(null);
+  const [currentUploadId, setCurrentUploadId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<Upload[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -46,6 +47,7 @@ export default function Home() {
   const handleUploadComplete = async (imageUrl: string, theme?: string) => {
     setIsGenerating(true);
     setCurrentMockups(null);
+    setCurrentUploadId(null);
 
     try {
       const response = await fetch('/api/mockups', {
@@ -65,6 +67,7 @@ export default function Home() {
 
       const data = await response.json();
       setCurrentMockups(data.mockups);
+      setCurrentUploadId(data.upload?.id || null);
       
       // Refresh history
       fetchHistory();
@@ -108,7 +111,11 @@ export default function Home() {
         {/* Mockup Display */}
         {(isGenerating || currentMockups) && (
           <section className="max-w-6xl mx-auto mb-16">
-            <MockupDisplay mockups={currentMockups} isLoading={isGenerating} />
+            <MockupDisplay 
+              mockups={currentMockups} 
+              isLoading={isGenerating}
+              uploadId={currentUploadId || undefined}
+            />
           </section>
         )}
 
@@ -138,7 +145,10 @@ export default function Home() {
                     
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setCurrentMockups(upload.mockup_urls)}
+                        onClick={() => {
+                          setCurrentMockups(upload.mockup_urls);
+                          setCurrentUploadId(upload.id);
+                        }}
                         className="flex-1 text-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
                         View Mockups

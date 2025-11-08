@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Jokester Merch Generator',
+  title: 'Merchify',
   description: 'Turn your images into custom merchandise in seconds',
 };
 

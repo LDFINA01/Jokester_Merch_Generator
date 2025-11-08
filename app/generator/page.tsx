@@ -77,7 +77,7 @@ export default function Generator() {
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Sparkles className="w-6 h-6 text-blue-600" />
               <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Jokester Merch Generator
+                Merchify
               </span>
             </Link>
             <Link
@@ -105,7 +105,7 @@ export default function Generator() {
         {/* Upload Section */}
         {!currentImageUrl && (
           <section className="max-w-2xl mx-auto mb-24">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center justify-center gap-2 mb-6">
               <Upload className="w-5 h-5 text-gray-400" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Upload Media</h2>
             </div>
@@ -217,7 +217,7 @@ export default function Generator() {
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-800 mt-24 py-8">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Jokester Merch Generator v0.1</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Merchify v0.1</p>
           <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Powered by Vercel, Supabase, and Printful</p>
         </div>
       </footer>

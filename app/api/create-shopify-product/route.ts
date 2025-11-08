@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!productType || !['mug', 'shirt'].includes(productType)) {
+    const validProductTypes = ['mug', 'shirt', 'shower_curtain', 'bath_mat', 'towel', 'hat', 'phone_case'];
+    if (!productType || !validProductTypes.includes(productType)) {
       return NextResponse.json(
-        { error: 'Invalid product type. Must be "mug" or "shirt"' },
+        { error: `Invalid product type. Must be one of: ${validProductTypes.join(', ')}` },
         { status: 400 }
       );
     }
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the mockup URL for the specified product type
-    const mockupUrl = upload.mockup_urls[productType as 'mug' | 'shirt'];
+    const mockupUrl = upload.mockup_urls[productType];
     
     if (!mockupUrl) {
       return NextResponse.json(
@@ -60,7 +61,10 @@ export async function POST(request: NextRequest) {
     // Generate product title and description
     const title = generateProductTitle(productType as ProductType);
     const description = generateProductDescription(productType as ProductType);
-    const price = PRODUCT_PRICING[productType.toUpperCase() as 'MUG' | 'SHIRT'];
+    
+    // Map product type to pricing key
+    const pricingKey = productType.toUpperCase() as keyof typeof PRODUCT_PRICING;
+    const price = PRODUCT_PRICING[pricingKey];
 
     // Create the Shopify product
     console.log(`Creating Shopify product for ${productType}...`);
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Update the upload record with Shopify product info
     await updateUploadShopifyInfo(
       uploadId,
-      productType as 'mug' | 'shirt',
+      productType,
       shopifyProduct.productId,
       shopifyProduct.shopifyUrl
     );

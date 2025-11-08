@@ -4,10 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 interface MockupDisplayProps {
-  mockups: {
-    mug: string;
-    shirt: string;
-  } | null;
+  mockups: Record<string, string>;
   isLoading: boolean;
   uploadId?: string;
 }
@@ -19,13 +16,49 @@ const products = [
     description: '11oz ceramic mug',
     price: 24.99,
   },
+  { 
+    name: 'Unisex T-Shirt', 
+    key: 'shirt' as const, 
+    description: 'Bella + Canvas 3001',
+    price: 29.99,
+  },
+  { 
+    name: 'Shower Curtain', 
+    key: 'shower_curtain' as const, 
+    description: '71"x74" polyester curtain',
+    price: 49.99,
+  },
+  { 
+    name: 'Bath Mat', 
+    key: 'bath_mat' as const, 
+    description: 'Memory foam with anti-slip backing',
+    price: 39.99,
+  },
+  { 
+    name: 'Beach Towel', 
+    key: 'towel' as const, 
+    description: '30"x60" all-over print',
+    price: 34.99,
+  },
+  { 
+    name: 'Dad Hat', 
+    key: 'hat' as const, 
+    description: 'Classic adjustable cap',
+    price: 27.99,
+  },
+  { 
+    name: 'iPhone Case', 
+    key: 'phone_case' as const, 
+    description: 'Clear protective case',
+    price: 22.99,
+  },
 ];
 
 export default function MockupDisplay({ mockups, isLoading, uploadId }: MockupDisplayProps) {
   const [buyingProduct, setBuyingProduct] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleBuyNow = async (productType: 'mug' | 'shirt') => {
+  const handleBuyNow = async (productType: 'mug' | 'shirt' | 'shower_curtain' | 'bath_mat' | 'towel' | 'hat' | 'phone_case') => {
     if (!uploadId) {
       setError('Upload ID not found. Please try generating the mockup again.');
       return;
@@ -63,31 +96,29 @@ export default function MockupDisplay({ mockups, isLoading, uploadId }: MockupDi
     }
   };
 
-  if (!isLoading && !mockups) {
+  if (!isLoading && Object.keys(mockups).length === 0) {
+    return null;
+  }
+
+  // Filter products to only show those that have mockups
+  const productsWithMockups = products.filter(product => mockups[product.key]);
+
+  if (productsWithMockups.length === 0 && !isLoading) {
     return null;
   }
 
   return (
     <div className="w-full">
-      <h2 className="text-3xl font-bold mb-8 text-center">Your Merch Mockups</h2>
+      <h2 className="text-3xl font-bold mb-8 text-center">Your Generated Mockups</h2>
       
-      <div className="flex justify-center max-w-2xl mx-auto">
-        {products.map((product) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {productsWithMockups.map((product) => (
           <div
             key={product.key}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 w-full"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700"
           >
             <div className="aspect-square relative bg-gray-100 dark:bg-gray-900">
-              {isLoading ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Generating {product.name.toLowerCase()}...
-                    </p>
-                  </div>
-                </div>
-              ) : mockups && mockups[product.key] ? (
+              {mockups[product.key] ? (
                 <Image
                   src={mockups[product.key]}
                   alt={`${product.name} mockup`}
@@ -113,7 +144,7 @@ export default function MockupDisplay({ mockups, isLoading, uploadId }: MockupDi
                 {product.description}
               </p>
               
-              {mockups && mockups[product.key] && !isLoading && (
+              {mockups[product.key] && (
                 <div className="space-y-2">
                   <button
                     onClick={() => handleBuyNow(product.key)}

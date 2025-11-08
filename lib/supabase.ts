@@ -27,21 +27,11 @@ export interface Upload {
   id: string;
   created_at: string;
   original_image_url: string;
-  mockup_urls: {
-    mug: string;
-    shirt: string;
-    blanket: string;
-  };
+  mockup_urls: Record<string, string>;
   user_identifier?: string;
   theme?: string;
-  shopify_product_ids?: {
-    mug?: string;
-    shirt?: string;
-  };
-  shopify_product_urls?: {
-    mug?: string;
-    shirt?: string;
-  };
+  shopify_product_ids?: Record<string, string>;
+  shopify_product_urls?: Record<string, string>;
 }
 
 // Helper function to create upload record
@@ -88,7 +78,7 @@ export async function getUploadById(id: string) {
 // Helper function to update upload with Shopify product info
 export async function updateUploadShopifyInfo(
   id: string,
-  productType: 'mug' | 'shirt',
+  productType: string,
   shopifyProductId: string,
   shopifyProductUrl: string
 ) {

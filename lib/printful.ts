@@ -11,14 +11,22 @@ if (!PRINTFUL_API_KEY) {
 export const PRODUCT_IDS = {
   MUG: 19, // Classic Mug 11oz
   SHIRT: 71, // Unisex T-Shirt
-  BLANKET: 445, // Fleece Blanket
+  SHOWER_CURTAIN: 761, // Shower Curtain 71"×74"
+  BATH_MAT: 884, // Bath Mat
+  TOWEL: 259, // Beach Towel
+  HAT: 206, // Classic Dad Hat
+  PHONE_CASE: 181, // iPhone Clear Case
 };
 
 // Variant IDs (we'll use default sizes/colors)
 export const VARIANT_IDS = {
   MUG: 1320, // White Glossy Mug 11 oz
   SHIRT: 4011, // Bella + Canvas 3001 White / S
-  // BLANKET: 9411, // Product 445 not found - temporarily disabled
+  SHOWER_CURTAIN: 19454, // White / 71"×74"
+  BATH_MAT: 22789, // White / 24"×17"
+  TOWEL: 8874, // 30"×60"
+  HAT: 7854, // Black / One size
+  PHONE_CASE: 17616, // iPhone 15
 };
 
 interface MockupRequest {
@@ -50,26 +58,74 @@ interface PrintfulMockupResponse {
   };
 }
 
-// Helper to make Printful API requests
-async function printfulRequest(endpoint: string, options: RequestInit = {}) {
+// Helper to make Printful API requests with retry logic
+async function printfulRequest(endpoint: string, options: RequestInit = {}, retries = 3) {
   const url = `${PRINTFUL_API_BASE}${endpoint}`;
   
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error(`Printful API error - Status: ${response.status}, Body:`, error);
-    throw new Error(`Printful API error: ${response.status} - ${error}`);
+      if (response.ok) {
+        return response.json();
+      }
+
+      // Handle rate limiting with exponential backoff
+      if (response.status === 429) {
+        const error = await response.text();
+        console.warn(`Rate limited (attempt ${attempt}/${retries}). Waiting before retry...`);
+        
+        // Parse wait time from error message or use exponential backoff
+        let waitTime = 30000; // Default 30 seconds
+        try {
+          const errorData = JSON.parse(error);
+          const message = errorData.result || errorData.error?.message || '';
+          const match = message.match(/(\d+)\s+seconds/);
+          if (match) {
+            waitTime = parseInt(match[1]) * 1000;
+          }
+        } catch (e) {
+          // Use default wait time
+        }
+        
+        if (attempt < retries) {
+          console.log(`Waiting ${waitTime / 1000} seconds before retry...`);
+          await delay(waitTime);
+          continue;
+        }
+      }
+
+      // For other errors or final retry, throw
+      const error = await response.text();
+      console.error(`Printful API error - Status: ${response.status}, Body:`, error);
+      throw new Error(`Printful API error: ${response.status} - ${error}`);
+      
+    } catch (fetchError: any) {
+      // Handle network errors (timeouts, connection failures)
+      if (fetchError.message?.includes('fetch failed') || fetchError.code === 'UND_ERR_CONNECT_TIMEOUT') {
+        console.warn(`Network error (attempt ${attempt}/${retries}):`, fetchError.message);
+        
+        if (attempt < retries) {
+          const backoffTime = attempt * 5000; // 5s, 10s, 15s
+          console.log(`Retrying after ${backoffTime / 1000} seconds due to network error...`);
+          await delay(backoffTime);
+          continue;
+        }
+      }
+      
+      // Re-throw if it's not a recoverable error or we're out of retries
+      throw fetchError;
+    }
   }
 
-  return response.json();
+  throw new Error('Max retries exceeded');
 }
 
 // Helper function to add delay between requests
@@ -171,22 +227,147 @@ async function pollMockupTask(taskKey: string, maxAttempts: number = 30): Promis
   throw new Error(`Mockup generation timed out after ${maxAttempts} attempts`);
 }
 
-// Generate all mockups (mug only for now)
-export async function generateAllMockups(imageUrl: string) {
-  console.log('Starting mockup generation...');
+// Generate mockups for selected products only
+export async function generateSelectedMockups(imageUrl: string, selectedProducts: string[]) {
+  console.log(`Starting mockup generation for ${selectedProducts.length} selected product(s)...`);
+  console.log(`Estimated time: ${selectedProducts.length * 8} seconds`);
+  
+  const results: Record<string, string> = {};
   
   try {
+    for (let i = 0; i < selectedProducts.length; i++) {
+      const productKey = selectedProducts[i];
+      console.log(`[${i + 1}/${selectedProducts.length}] Generating ${productKey} mockup...`);
+      
+      let mockupUrl: string;
+      
+      switch (productKey) {
+        case 'mug':
+          mockupUrl = await generateMockup(PRODUCT_IDS.MUG, VARIANT_IDS.MUG, imageUrl, 'default');
+          break;
+        case 'shirt':
+          mockupUrl = await generateMockup(PRODUCT_IDS.SHIRT, VARIANT_IDS.SHIRT, imageUrl, 'front');
+          break;
+        case 'shower_curtain':
+          mockupUrl = await generateMockup(PRODUCT_IDS.SHOWER_CURTAIN, VARIANT_IDS.SHOWER_CURTAIN, imageUrl, 'default');
+          break;
+        case 'bath_mat':
+          mockupUrl = await generateMockup(PRODUCT_IDS.BATH_MAT, VARIANT_IDS.BATH_MAT, imageUrl, 'front');
+          break;
+        case 'towel':
+          mockupUrl = await generateMockup(PRODUCT_IDS.TOWEL, VARIANT_IDS.TOWEL, imageUrl, 'default');
+          break;
+        case 'hat':
+          mockupUrl = await generateMockup(PRODUCT_IDS.HAT, VARIANT_IDS.HAT, imageUrl, 'default');
+          break;
+        case 'phone_case':
+          mockupUrl = await generateMockup(PRODUCT_IDS.PHONE_CASE, VARIANT_IDS.PHONE_CASE, imageUrl, 'default');
+          break;
+        default:
+          console.warn(`Unknown product type: ${productKey}`);
+          continue;
+      }
+      
+      results[productKey] = mockupUrl;
+      
+      // Add delay between products (except after the last one)
+      if (i < selectedProducts.length - 1) {
+        await delay(5000);
+      }
+    }
+    
+    console.log('Selected mockups generated successfully!');
+    return results;
+  } catch (error) {
+    console.error('Error generating mockups:', error);
+    throw new Error(`Failed to generate mockups from Printful: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+// Generate all mockups (kept for backward compatibility)
+export async function generateAllMockups(imageUrl: string) {
+  console.log('Starting mockup generation for all products...');
+  console.log('This will take approximately 45-60 seconds to complete all products.');
+  
+  try {
+    // Generate mug mockup
+    console.log('[1/7] Generating mug mockup...');
     const mugUrl = await generateMockup(
       PRODUCT_IDS.MUG,
       VARIANT_IDS.MUG,
       imageUrl,
-      'default'  // Mugs use 'default' placement
+      'default'
+    );
+    await delay(5000); // Conservative 5-second delay
+
+    // Generate shirt mockup
+    console.log('[2/7] Generating shirt mockup...');
+    const shirtUrl = await generateMockup(
+      PRODUCT_IDS.SHIRT,
+      VARIANT_IDS.SHIRT,
+      imageUrl,
+      'front'
+    );
+    await delay(5000);
+
+    // Generate shower curtain mockup
+    console.log('[3/7] Generating shower curtain mockup...');
+    const showerCurtainUrl = await generateMockup(
+      PRODUCT_IDS.SHOWER_CURTAIN,
+      VARIANT_IDS.SHOWER_CURTAIN,
+      imageUrl,
+      'default'
+    );
+    await delay(5000);
+
+    // Generate bath mat mockup
+    console.log('[4/7] Generating bath mat mockup...');
+    const bathMatUrl = await generateMockup(
+      PRODUCT_IDS.BATH_MAT,
+      VARIANT_IDS.BATH_MAT,
+      imageUrl,
+      'front'
+    );
+    await delay(5000);
+
+    // Generate towel mockup
+    console.log('[5/7] Generating towel mockup...');
+    const towelUrl = await generateMockup(
+      PRODUCT_IDS.TOWEL,
+      VARIANT_IDS.TOWEL,
+      imageUrl,
+      'default'
+    );
+    await delay(5000);
+
+    // Generate hat mockup
+    console.log('[6/7] Generating hat mockup...');
+    const hatUrl = await generateMockup(
+      PRODUCT_IDS.HAT,
+      VARIANT_IDS.HAT,
+      imageUrl,
+      'default'
+    );
+    await delay(5000);
+
+    // Generate phone case mockup
+    console.log('[7/7] Generating phone case mockup...');
+    const phoneCaseUrl = await generateMockup(
+      PRODUCT_IDS.PHONE_CASE,
+      VARIANT_IDS.PHONE_CASE,
+      imageUrl,
+      'default'
     );
     
-    console.log('Mockup generated successfully!');
+    console.log('All mockups generated successfully!');
     return {
       mug: mugUrl,
-      shirt: null,  // Disabled for now
+      shirt: shirtUrl,
+      shower_curtain: showerCurtainUrl,
+      bath_mat: bathMatUrl,
+      towel: towelUrl,
+      hat: hatUrl,
+      phone_case: phoneCaseUrl,
     };
   } catch (error) {
     console.error('Error generating mockups:', error);

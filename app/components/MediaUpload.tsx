@@ -66,6 +66,9 @@ export default function MediaUpload({ onUploadComplete }: MediaUploadProps) {
         onUploadComplete(data.url); // No theme for images
       } else {
         // Video processing - longer flow
+        if (theme.trim()) {
+          formData.append('theme', theme.trim());
+        }
         setProcessingStage('Uploading video to cloud storage...');
         const response = await fetch('/api/upload', {
           method: 'POST',

@@ -7,7 +7,6 @@ interface MockupDisplayProps {
   mockups: Record<string, string>;
   isLoading: boolean;
   uploadId?: string;
-  originalImageUrl?: string;
 }
 
 const products = [
@@ -73,7 +72,7 @@ const products = [
   },
 ];
 
-export default function MockupDisplay({ mockups, isLoading, uploadId, originalImageUrl }: MockupDisplayProps) {
+export default function MockupDisplay({ mockups, isLoading, uploadId }: MockupDisplayProps) {
   const [buyingProduct, setBuyingProduct] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 

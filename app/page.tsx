@@ -114,8 +114,8 @@ export default function Home() {
         {/* Mockup Display */}
         {Object.keys(currentMockups).length > 0 && (
           <section className="max-w-6xl mx-auto mb-16">
-            <MockupDisplay 
-              mockups={currentMockups} 
+            <MockupDisplay
+              mockups={currentMockups}
               isLoading={false}
               uploadId={currentUploadId || undefined}
             />

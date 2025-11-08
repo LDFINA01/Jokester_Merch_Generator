@@ -21,6 +21,7 @@ def process():
         # Get the Supabase video index from the request
         data = request.get_json()
         video_index = data.get('video_index')
+        theme = data.get('theme')
         if not video_index:
             return jsonify({"error": "Missing video_index"}), 400
         
@@ -54,7 +55,7 @@ def process():
         if "error" in extract_result:
             return jsonify({"error": extract_result["error"]}), 500
         
-        generated_image_path = generate_image(transcript_data, extracted_frame_path, important_word_data["phrase"])
+        generated_image_path = generate_image(transcript_data, extracted_frame_path, important_word_data["phrase"], theme)
         if not generated_image_path:
             return jsonify({"error": "Image generation failed"}), 500
         

@@ -53,6 +53,7 @@ ENV/
 *.swo
 *~
 .cursor/
+notepad.txt
 
 
 # Server artifacts

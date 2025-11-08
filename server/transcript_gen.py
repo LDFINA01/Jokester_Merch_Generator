@@ -37,7 +37,7 @@ def identify_important_word(transcript, word_timestamps):
     ])
 
     # Specify the model
-    llm = ChatOpenAI(model_name="gpt-4-turbo", max_tokens=100)
+    llm = ChatOpenAI(model_name="gpt-4o-mini", max_tokens=100)
 
     # Chain
     chain = prompt | llm | StrOutputParser()
@@ -155,7 +155,7 @@ def check_image_for_issues(image_path):
         # Create the prompt for analysis
         prompt = (
             "Analyze this image for a merch-worthy logo. Check for issues such as: "
-            "extra arms, missing fingers, distorted human forms, misspellings in text, "
+            "extra arms, missing fingers, distorted human forms, misspellings, nonsensical or repetitive text (e.g., multiple identical words in a row that don't form a coherent phrase),"
             "or any elements that look unnatural or incorrect. "
             "Respond with ONLY 'YES' if any issues are found, or 'NO' if the image looks correct and high-quality."
         )
@@ -197,7 +197,7 @@ def revise_image(image_path, transcript, important_phrase, theme=None):
     important_phrase = censor_text(important_phrase)
     prompt = (
         f"This is a revision request for fun, comedic merchandise. The original image has issues—fix them while keeping the design intact. "
-        f"Correct any distortions, extra limbs, missing fingers, misspellings, or unnatural elements. "
+        f"Correct any distortions, extra limbs, missing fingers, misspellings, nonsensical or repetitive text (e.g., multiple identical words in a row that don't form a coherent phrase), or unnatural elements. "
         f"Transform this image into a vibrant, merch-worthy logo inspired by the comedic transcript: {transcript}. "
         f"If a comedian appears, ensure they are stylized correctly as a central, recognizable character. "
         f"Feature the key phrase '{important_phrase}' prominently in a creative, bold typography style. "

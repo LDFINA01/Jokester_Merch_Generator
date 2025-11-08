@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validProductTypes = ['mug', 'shirt', 'shower_curtain', 'bath_mat', 'towel', 'hat', 'phone_case'];
+    const validProductTypes = ['mug', 'shirt', 'shower_curtain', 'bath_mat', 'towel', 'hat', 'phone_case', 'sweatpants', 'pillow', 'sticker'];
     if (!productType || !validProductTypes.includes(productType)) {
       return NextResponse.json(
         { error: `Invalid product type. Must be one of: ${validProductTypes.join(', ')}` },

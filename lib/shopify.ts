@@ -17,9 +17,12 @@ export const PRODUCT_PRICING = {
   TOWEL: 34.99,
   HAT: 27.99,
   PHONE_CASE: 22.99,
+  SWEATPANTS: 44.99,
+  PILLOW: 32.99,
+  STICKER: 4.99,
 };
 
-export type ProductType = 'mug' | 'shirt' | 'shower_curtain' | 'bath_mat' | 'towel' | 'hat' | 'phone_case';
+export type ProductType = 'mug' | 'shirt' | 'shower_curtain' | 'bath_mat' | 'towel' | 'hat' | 'phone_case' | 'sweatpants' | 'pillow' | 'sticker';
 
 interface CreateProductParams {
   title: string;
@@ -74,6 +77,9 @@ export async function createShopifyProduct({
     towel: 'Home & Living',
     hat: 'Accessories',
     phone_case: 'Accessories',
+    sweatpants: 'Apparel & Accessories',
+    pillow: 'Home & Living',
+    sticker: 'Accessories',
   };
 
   // Create the product
@@ -157,6 +163,9 @@ export function generateProductTitle(productType: ProductType): string {
     towel: 'Beach Towel',
     hat: 'Dad Hat',
     phone_case: 'iPhone Case',
+    sweatpants: 'Sweatpants',
+    pillow: 'Pillow',
+    sticker: 'Square Sticker',
   };
   return `Custom ${typeLabelMap[productType]} Design`;
 }
@@ -225,6 +234,33 @@ export function generateProductDescription(productType: ProductType): string {
         <li>Solid polycarbonate back</li>
         <li>Flexible, see-through sides</li>
         <li>Wireless charging compatible</li>
+      </ul>
+    `,
+    sweatpants: `
+      <p>Stay cozy with custom sweatpants featuring your design.</p>
+      <ul>
+        <li>Unisex fleece sweatpants</li>
+        <li>Cotton Heritage M7580</li>
+        <li>Soft, comfortable material</li>
+        <li>Front embroidered design</li>
+      </ul>
+    `,
+    pillow: `
+      <p>Add comfort and style to any space with a custom pillow.</p>
+      <ul>
+        <li>18"×18" premium pillow</li>
+        <li>All-over print on front</li>
+        <li>Shape-retaining polyester fill</li>
+        <li>Hidden zipper for easy cleaning</li>
+      </ul>
+    `,
+    sticker: `
+      <p>Show off your design with high-quality kiss-cut stickers.</p>
+      <ul>
+        <li>3"×3" square sticker</li>
+        <li>Glossy finish</li>
+        <li>Durable vinyl material</li>
+        <li>Easy peel backing</li>
       </ul>
     `,
   };

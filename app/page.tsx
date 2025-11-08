@@ -3,25 +3,20 @@
 import { useState, useEffect } from 'react';
 import MediaUpload from './components/MediaUpload';
 import MockupDisplay from './components/MockupDisplay';
+import ProductSelector from './components/ProductSelector';
 
 interface Upload {
   id: string;
   created_at: string;
   original_image_url: string;
-  mockup_urls: {
-    mug: string;
-    shirt: string;
-  };
+  mockup_urls: Record<string, string>;
   theme?: string;
 }
 
 export default function Home() {
-  const [currentMockups, setCurrentMockups] = useState<{
-    mug: string;
-    shirt: string;
-  } | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [currentMockups, setCurrentMockups] = useState<Record<string, string>>({});
   const [currentUploadId, setCurrentUploadId] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<Upload[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
@@ -45,38 +40,19 @@ export default function Home() {
   };
 
   const handleUploadComplete = async (imageUrl: string, theme?: string) => {
-    setIsGenerating(true);
-    setCurrentMockups(null);
+    // Show product selector after upload
+    setCurrentImageUrl(imageUrl);
+    setCurrentMockups({});
     setCurrentUploadId(null);
+  };
 
-    try {
-      const response = await fetch('/api/mockups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          imageUrl,
-          theme: theme || undefined 
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate mockups');
-      }
-
-      const data = await response.json();
-      setCurrentMockups(data.mockups);
-      setCurrentUploadId(data.upload?.id || null);
-      
-      // Refresh history
-      fetchHistory();
-    } catch (error) {
-      console.error('Error generating mockups:', error);
-      alert('Failed to generate mockups. Please try again.');
-    } finally {
-      setIsGenerating(false);
+  const handleMockupsGenerated = (mockups: Record<string, string>, uploadId?: string) => {
+    setCurrentMockups(mockups);
+    if (uploadId) {
+      setCurrentUploadId(uploadId);
     }
+    // Refresh history
+    fetchHistory();
   };
 
   const formatDate = (dateString: string) => {
@@ -104,16 +80,43 @@ export default function Home() {
         </header>
 
         {/* Upload Section */}
-        <section className="max-w-2xl mx-auto mb-16">
-          <MediaUpload onUploadComplete={handleUploadComplete} />
-        </section>
+        {!currentImageUrl && (
+          <section className="max-w-2xl mx-auto mb-16">
+            <MediaUpload onUploadComplete={handleUploadComplete} />
+          </section>
+        )}
+
+        {/* Product Selector - Shows after upload */}
+        {currentImageUrl && (
+          <section className="max-w-6xl mx-auto mb-16">
+            <ProductSelector
+              imageUrl={currentImageUrl}
+              onMockupsGenerated={handleMockupsGenerated}
+              existingMockups={currentMockups}
+            />
+            
+            {/* Start New Upload Button */}
+            <div className="text-center mt-8">
+              <button
+                onClick={() => {
+                  setCurrentImageUrl(null);
+                  setCurrentMockups({});
+                  setCurrentUploadId(null);
+                }}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+              >
+                Start New Upload
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Mockup Display */}
-        {(isGenerating || currentMockups) && (
+        {Object.keys(currentMockups).length > 0 && (
           <section className="max-w-6xl mx-auto mb-16">
             <MockupDisplay 
               mockups={currentMockups} 
-              isLoading={isGenerating}
+              isLoading={false}
               uploadId={currentUploadId || undefined}
             />
           </section>
@@ -146,12 +149,14 @@ export default function Home() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
+                          setCurrentImageUrl(upload.original_image_url);
                           setCurrentMockups(upload.mockup_urls);
                           setCurrentUploadId(upload.id);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         className="flex-1 text-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
-                        View Mockups
+                        View & Add More
                       </button>
                     </div>
                   </div>
@@ -168,9 +173,9 @@ export default function Home() {
           </div>
         )}
 
-        {!isLoadingHistory && history.length === 0 && !currentMockups && (
+        {!isLoadingHistory && history.length === 0 && !currentImageUrl && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <p>No uploads yet. Upload a video to get started!</p>
+            <p>No uploads yet. Upload an image to get started!</p>
           </div>
         )}
       </div>

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateAllMockups } from '@/lib/printful';
+import { generateSelectedMockups } from '@/lib/printful';
 import { createUpload } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { imageUrl, userIdentifier, theme } = body;
+    const { imageUrl, userIdentifier, theme, selectedProducts, uploadId } = body;
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -14,8 +14,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate mockups using Printful API
-    const mockupUrls = await generateAllMockups(imageUrl);
+    if (!selectedProducts || !Array.isArray(selectedProducts) || selectedProducts.length === 0) {
+      return NextResponse.json(
+        { error: 'No products selected' },
+        { status: 400 }
+      );
+    }
+
+    // Generate mockups only for selected products
+    const mockupUrls = await generateSelectedMockups(imageUrl, selectedProducts);
 
     // Save to Supabase
     const upload = await createUpload({

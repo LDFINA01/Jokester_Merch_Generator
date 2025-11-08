@@ -1,7 +1,7 @@
 from moviepy import VideoFileClip
 from openai import OpenAI
 from dotenv import load_dotenv
-from chain import identify_important_word
+from chain import identify_important_word, extract_image, generate_image
 
 load_dotenv()
 
@@ -33,6 +33,16 @@ def transcribe_with_timestamps(audio_file_path, model="whisper-1"):
     return transcript, word_timestamps
 
 if __name__ == "__main__":
-    transcript, word_timestamps = transcribe_with_timestamps(audio_file_path="videoplayback3.mp4")
-    frame = identify_important_word(transcript=transcript, word_timestamps=word_timestamps)
-    print(frame)
+    video_file_path="videoplayback3.mp4"
+    extracted_frame_path="extracted_frame.png"
+    output_image_path="output.png"
+
+    transcript, word_timestamps = transcribe_with_timestamps(audio_file_path=video_file_path)
+    frame_json = identify_important_word(transcript=transcript, word_timestamps=word_timestamps)
+    print(frame_json)
+
+    extract_image(frame_json, video_path=video_file_path, output_path=extracted_frame_path)
+
+    url = generate_image(transcript, frame_path=extracted_frame_path, important_phrase=frame_json["phrase"])
+
+    print(url)

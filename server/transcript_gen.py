@@ -156,4 +156,4 @@ if __name__ == "__main__":
 
     extract_image(frame_json, video_path=video_file_path, output_path=extracted_frame_path)
     
-    generate_image(transcript, extracted_frame_path, frame_json["phrase"], theme="Dark and sad")
+    generate_image(transcript, extracted_frame_path, frame_json["phrase"], theme="wacky and funny")

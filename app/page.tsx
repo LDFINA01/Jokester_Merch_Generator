@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ImageUpload from './components/ImageUpload';
+import VideoUpload from './components/VideoUpload';
 import MockupDisplay from './components/MockupDisplay';
 
 interface Upload {
@@ -92,13 +92,13 @@ export default function Home() {
             Jokester Merch Generator
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400">
-            Turn your images into custom merchandise in seconds
+            Turn your videos into custom merchandise in seconds
           </p>
         </header>
 
         {/* Upload Section */}
         <section className="max-w-2xl mx-auto mb-16">
-          <ImageUpload onUploadComplete={handleUploadComplete} />
+          <VideoUpload onUploadComplete={handleUploadComplete} />
         </section>
 
         {/* Mockup Display */}
@@ -122,7 +122,7 @@ export default function Home() {
                   <div className="aspect-square relative bg-gray-100 dark:bg-gray-900">
                     <img
                       src={upload.original_image_url}
-                      alt="Uploaded image"
+                      alt="Generated image"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                   </div>
@@ -156,7 +156,7 @@ export default function Home() {
 
         {!isLoadingHistory && history.length === 0 && !currentMockups && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <p>No uploads yet. Upload an image to get started!</p>
+            <p>No uploads yet. Upload a video to get started!</p>
           </div>
         )}
       </div>
@@ -164,7 +164,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-700 mt-16 py-8">
         <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400">
-          <p>Jokester Merch Generator v0.1 - Image to Merch</p>
+          <p>Jokester Merch Generator v0.1 - Video to Merch</p>
           <p className="text-sm mt-2">Powered by Vercel, Supabase, and Printful</p>
         </div>
       </footer>

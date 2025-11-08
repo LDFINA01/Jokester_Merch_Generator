@@ -2,7 +2,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from moviepy import VideoFileClip
-from PIL import Image, ImageDraw
+from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import numpy as np
 import json, io
 import PIL.Image
@@ -15,6 +15,7 @@ from openai import OpenAI
 from dotenv import load_dotenv 
 load_dotenv()
 
+client = OpenAI()
 
 def identify_important_word(transcript, word_timestamps):
     # Validate input
@@ -75,61 +76,124 @@ def censor_text(text):
     cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', text)
     return profanity.censor(cleaned)
 
-# function to generate an image from user questions list
-def generate_image(transcript, frame_path, important_phrase):
-    client = OpenAI()
 
+def get_design_metadata(transcript, important_phrase):
+    prompt = (
+        f"Given this comedic transcript: {transcript}, "
+        f"and key phrase: '{important_phrase}', "
+        f"generate a JSON object describing how to stylize an image. "
+        f"Include: silhouette_color (hex), accent_color (hex), "
+        f"font_color (hex), mood (one of: 'calm', 'energetic', 'chaotic'), "
+        f"and suggested_text_position ('bottom', 'top', or 'center'). "
+        f"Keep the JSON concise and valid — no commentary, just JSON."
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"}
+    )
+
+    data = json.loads(response.choices[0].message.content)
+    return data
+
+
+def apply_design_style(image_path, text, style_data, output_path="styled_output.png"):
+    # Load image
+    img = Image.open(image_path).convert("RGBA")
+
+    # Apply a color tint overlay
+    overlay = Image.new("RGBA", img.size, style_data["silhouette_color"])
+    img = Image.blend(img, overlay, 0.5)  # 50% blend for tint
+
+    # Adjust saturation based on mood
+    enhancer = ImageEnhance.Color(img)
+    mood = style_data.get("mood", "calm")
+    if mood == "calm":
+        img = enhancer.enhance(0.8)
+    elif mood == "energetic":
+        img = enhancer.enhance(1.4)
+    elif mood == "chaotic":
+        img = enhancer.enhance(1.8)
+
+    # Prepare drawing context
+    draw = ImageDraw.Draw(img)
+
+    # Load font (you can replace with a specific .ttf font file)
+    font = ImageFont.load_default()
+    text_color = style_data["font_color"]
+
+    # Measure text size
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+
+    # Choose placement
+    position = style_data.get("suggested_text_position", "bottom")
+    if position == "bottom":
+        x = (img.width - text_w) / 2
+        y = img.height - text_h - 30
+    elif position == "top":
+        x = (img.width - text_w) / 2
+        y = 30
+    else:  # center
+        x = (img.width - text_w) / 2
+        y = (img.height - text_h) / 2
+
+    # Draw text
+    draw.text((x, y), text, fill=text_color, font=font)
+
+    # Save the final styled image
+    img.save(output_path)
+    print(f"✅ Styled image saved to {output_path}")
+    return output_path
+
+
+
+import os
+import base64
+import tempfile
+from openai import OpenAI
+from PIL import Image
+
+client = OpenAI()
+
+def generate_image(transcript, frame_path, important_phrase):
     transcript = censor_text(transcript)
     important_phrase = censor_text(important_phrase)
 
-    # Strong creative merch prompt
+    
     prompt = (
-        f"Radically redesign this frame into a vibrant, merch-worthy image inspired by this comedic transcript: {transcript}. "
-        f"Feature the key phrase '{important_phrase}' prominently. "
-        f"Make it colorful, bold, and artistic — suitable for stickers, t-shirts, or mugs. "
+        f"Transform this frame into a vibrant, merch-worthy logo inspired by the comedic transcript: {transcript}. "
+        f"If a comedian appears in the frame, include and stylize them as a central, recognizable character — expressive, confident, and part of the design. "
+        f"Feature the key phrase '{important_phrase}' prominently in a creative, bold typography style that complements the art. "
+        f"Use a colorful, high-energy, artistic style that would look great on stickers, t-shirts, or mugs. "
+        f"Maintain the humor and personality of the moment."
     )
 
-    try:
-        # Load and resize to 1024x1024
-        base_image = Image.open(frame_path).convert("RGBA").resize((1024, 1024))
-
-        # Create mostly-black mask (edit almost everything)
-        mask = Image.new("L", base_image.size, 1)
-        draw = ImageDraw.Draw(mask)
-
-        # Add small gray blotches so the AI retains ~10% of structure
-        for _ in range(15):
-            x0, y0 = random.randint(0, 1024), random.randint(0, 1024)
-            x1, y1 = x0 + random.randint(80, 250), y0 + random.randint(80, 250)
-            draw.ellipse([x0, y0, x1, y1], fill=random.randint(60, 120))
-
-        # Save temporary copies for API upload
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_img:
-            base_image.save(tmp_img, format="PNG")
-            tmp_img_path = tmp_img.name
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_mask:
-            mask.save(tmp_mask, format="PNG")
-            tmp_mask_path = tmp_mask.name
-
-    except Exception as e:
-        return {"error": f"Image/mask creation failed: {e}"}
 
     try:
-        # Generate the image
-        result = client.images.edit(
-            model="dall-e-2",
-            image=open(tmp_img_path, "rb"),
-            mask=open(tmp_mask_path, "rb"),
-            prompt=prompt,
-            size="1024x1024",
-            n=1
-        )
+        with open(frame_path, "rb") as img_file:
+            # ✅ Correct: pass the file handle directly
+            result = client.images.edit(
+                model="gpt-image-1",
+                image=img_file,
+                prompt=prompt,
+                size="1024x1024",
+                n=1
+            )
 
-        # Return base64 image (no local file)
-        return result.data[0].url
+        # Decode Base64 → bytes
+        image_base64 = result.data[0].b64_json
+        image_bytes = base64.b64decode(image_base64)
+
+        # Save to local file
+        output_path = os.path.join(os.getcwd(), "output.png")
+        with open(output_path, "wb") as f:
+            f.write(image_bytes)
+
+        print(f"✅ Image saved as: {output_path}")
+        return output_path
+
     except Exception as e:
         return {"error": f"Image generation failed: {e}"}
-    finally:
-        os.unlink(tmp_img_path)
-        os.unlink(tmp_mask_path)
-

@@ -7,6 +7,7 @@ interface MockupDisplayProps {
   mockups: Record<string, string>;
   isLoading: boolean;
   uploadId?: string;
+  originalImageUrl?: string;
 }
 
 const products = [
@@ -72,11 +73,11 @@ const products = [
   },
 ];
 
-export default function MockupDisplay({ mockups, isLoading, uploadId }: MockupDisplayProps) {
+export default function MockupDisplay({ mockups, isLoading, uploadId, originalImageUrl }: MockupDisplayProps) {
   const [buyingProduct, setBuyingProduct] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleBuyNow = async (productType: 'mug' | 'shirt' | 'shower_curtain' | 'bath_mat' | 'towel' | 'hat' | 'phone_case') => {
+  const handleBuyNow = async (productType: 'mug' | 'shirt' | 'shower_curtain' | 'bath_mat' | 'towel' | 'hat' | 'phone_case' | 'sweatpants' | 'pillow' | 'sticker') => {
     if (!uploadId) {
       setError('Upload ID not found. Please try generating the mockup again.');
       return;

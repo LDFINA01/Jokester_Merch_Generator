@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'files.cdn.printful.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'printful-upload.s3-accelerate.amazonaws.com',
+      },
     ],
   },
 };

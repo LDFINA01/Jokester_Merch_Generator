@@ -52,7 +52,9 @@ interface PrintfulMockupResponse {
 
 // Helper to make Printful API requests
 async function printfulRequest(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`${PRINTFUL_API_BASE}${endpoint}`, {
+  const url = `${PRINTFUL_API_BASE}${endpoint}`;
+  
+  const response = await fetch(url, {
     ...options,
     headers: {
       'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
@@ -63,6 +65,7 @@ async function printfulRequest(endpoint: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const error = await response.text();
+    console.error(`Printful API error - Status: ${response.status}, Body:`, error);
     throw new Error(`Printful API error: ${response.status} - ${error}`);
   }
 
@@ -100,54 +103,94 @@ async function generateMockup(
     ],
   };
 
-  const response: PrintfulMockupResponse = await printfulRequest(
+  const response: any = await printfulRequest(
     `/mockup-generator/create-task/${productId}`,
     {
       method: 'POST',
       body: JSON.stringify(request),
     }
   );
-
-  // The task is created, now we need to fetch the result
-  const taskKey = response.result.mockups[0]?.mockup_url;
-  if (!taskKey) {
-    throw new Error('No mockup URL returned from Printful');
+  
+  // Check if this is a task-based response (async) or immediate response (sync)
+  if (response.result?.task_key) {
+    // This is an async task - need to poll for results
+    const mockupUrl = await pollMockupTask(response.result.task_key);
+    return mockupUrl;
+  } else if (response.result?.mockups && response.result.mockups.length > 0) {
+    const mockupUrl = response.result.mockups[0]?.mockup_url;
+    if (!mockupUrl) {
+      throw new Error('No mockup URL in response');
+    }
+    return mockupUrl;
+  } else {
+    console.error('Unexpected Printful API response structure:', response);
+    throw new Error('Unexpected Printful API response structure');
   }
-
-  return taskKey;
 }
 
-// Generate all mockups (mug, shirt)
+// Poll for mockup task completion
+async function pollMockupTask(taskKey: string, maxAttempts: number = 30): Promise<string> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response: any = await printfulRequest(
+        `/mockup-generator/task?task_key=${taskKey}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (response.code === 200 && response.result?.mockups && response.result.mockups.length > 0) {
+        const mockupData = response.result.mockups[0];
+        
+        // For mugs, try to use the "Front view" from extras if available
+        if (mockupData.extra && Array.isArray(mockupData.extra)) {
+          const frontView = mockupData.extra.find((view: any) => 
+            view.title?.toLowerCase().includes('front') || 
+            view.option?.toLowerCase().includes('front')
+          );
+          if (frontView && frontView.url) {
+            return frontView.url;
+          }
+        }
+        
+        // Otherwise use the default mockup URL
+        return mockupData.mockup_url;
+      }
+
+      // Task still processing, wait before next attempt
+      await delay(2000);
+    } catch (error) {
+      console.error(`Error polling task (attempt ${attempt}):`, error);
+      if (attempt === maxAttempts) {
+        throw new Error(`Failed to get mockup after ${maxAttempts} attempts`);
+      }
+      await delay(2000);
+    }
+  }
+
+  throw new Error(`Mockup generation timed out after ${maxAttempts} attempts`);
+}
+
+// Generate all mockups (mug only for now)
 export async function generateAllMockups(imageUrl: string) {
+  console.log('Starting mockup generation...');
+  
   try {
-    // Generate mockups SEQUENTIALLY with delays to avoid rate limiting
-    console.log('Generating mug mockup...');
     const mugUrl = await generateMockup(
       PRODUCT_IDS.MUG,
       VARIANT_IDS.MUG,
       imageUrl,
-      'default'
+      'default'  // Mugs use 'default' placement
     );
     
-    // Wait 2 seconds between requests to avoid rate limiting
-    await delay(2000);
-    
-    console.log('Generating shirt mockup...');
-    const shirtUrl = await generateMockup(
-      PRODUCT_IDS.SHIRT,
-      VARIANT_IDS.SHIRT,
-      imageUrl,
-      'default'
-    );
-
-    console.log('All mockups generated successfully!');
+    console.log('Mockup generated successfully!');
     return {
       mug: mugUrl,
-      shirt: shirtUrl,
+      shirt: null,  // Disabled for now
     };
   } catch (error) {
     console.error('Error generating mockups:', error);
-    throw new Error('Failed to generate mockups from Printful');
+    throw new Error(`Failed to generate mockups from Printful: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

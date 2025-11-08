@@ -86,6 +86,7 @@ def generate_image(transcript, frame_path, important_phrase, theme=None):
 
     
     prompt = (
+        f"This is a request for creating fun, comedic merchandise inspired by a light-hearted comedy routine. All content is intended in good faith for humor and positivity. "
         f"Transform this frame into a vibrant, merch-worthy logo inspired by the comedic transcript: {transcript}. "
         f"If a comedian appears in the frame, include and stylize them as a central, recognizable character — expressive, confident, and part of the design. "
         f"Feature the key phrase '{important_phrase}' prominently in a creative, bold typography style that complements the art. "
@@ -145,6 +146,86 @@ def transcribe_with_timestamps(audio_file_path, model="whisper-1"):
     transcript = getattr(response, 'text', '')
     return transcript, word_timestamps
 
+def check_image_for_issues(image_path):
+    try:
+        # Encode the image to base64
+        with open(image_path, "rb") as img_file:
+            image_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+        
+        # Create the prompt for analysis
+        prompt = (
+            "Analyze this image for a merch-worthy logo. Check for issues such as: "
+            "extra arms, missing fingers, distorted human forms, misspellings in text, "
+            "or any elements that look unnatural or incorrect. "
+            "Respond with ONLY 'YES' if any issues are found, or 'NO' if the image looks correct and high-quality."
+        )
+        
+        # Use GPT-4 Vision to analyze
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Or "gpt-4o" if available
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{image_base64}"}
+                        }
+                    ]
+                }
+            ],
+            max_tokens=10  # Keep response short
+        )
+        
+        # Extract and clean the response
+        result = response.choices[0].message.content.strip().upper()
+        if "YES" in result:
+            return "YES"
+        elif "NO" in result:
+            return "NO"
+        else:
+            # Fallback if response is unclear
+            return "NO"
+
+    except Exception as e:
+        print(f"Error checking image: {e}")
+        return "NO"  # Default to NO to avoid blocking regeneration
+
+def revise_image(image_path, transcript, important_phrase, theme=None):
+    transcript = censor_text(transcript)
+    important_phrase = censor_text(important_phrase)
+    prompt = (
+        f"This is a revision request for fun, comedic merchandise. The original image has issues—fix them while keeping the design intact. "
+        f"Correct any distortions, extra limbs, missing fingers, misspellings, or unnatural elements. "
+        f"Transform this image into a vibrant, merch-worthy logo inspired by the comedic transcript: {transcript}. "
+        f"If a comedian appears, ensure they are stylized correctly as a central, recognizable character. "
+        f"Feature the key phrase '{important_phrase}' prominently in a creative, bold typography style. "
+        f"Use a {theme if theme else "colorful, high-energy, artistic"} style for stickers, t-shirts, or mugs. "
+        f"Maintain the humor and personality. Ensure all human forms are ordinary and correct."
+    )
+    try:
+        with open(image_path, "rb") as img_file:
+            result = client.images.edit(
+                model="gpt-image-1",
+                image=img_file,
+                prompt=prompt,
+                size="1024x1024",
+                n=1
+            )
+        # Decode Base64 → bytes
+        image_base64 = result.data[0].b64_json
+        image_bytes = base64.b64decode(image_base64)
+        # Save to a new file (e.g., revised_output.png)
+        revised_output_path = os.path.join(os.getcwd(), "revised_output.png")
+        with open(revised_output_path, "wb") as f:
+            f.write(image_bytes)
+        print(f"✅ Revised image saved as: {revised_output_path}")
+        return revised_output_path
+    except Exception as error:
+        print(f"Unable to revise image: {error}")
+        return None
+
 if __name__ == "__main__":
     video_file_path="videoplayback3.mp4"
     extracted_frame_path="extracted_frame.png"
@@ -156,4 +237,14 @@ if __name__ == "__main__":
 
     extract_image(frame_json, video_path=video_file_path, output_path=extracted_frame_path)
     
-    generate_image(transcript, extracted_frame_path, frame_json["phrase"], theme="wacky and funny")
+    generate_image(transcript, extracted_frame_path, frame_json["phrase"], theme="dark and real")
+
+    if check_image_for_issues(output_image_path) == "YES":
+        print("Issues detected; revising image...")
+        revised_path = revise_image(output_image_path, transcript, frame_json["phrase"], theme)
+        if revised_path:
+            output_image_path = revised_path  # Use the revised image
+        else:
+            print("Revision failed; using original image.")
+
+    print(f"✅ Final image saved as: {output_image_path}")

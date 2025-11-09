@@ -2,9 +2,15 @@
 
 Turn images into custom merchandise mockups instantly. Upload an image, and we'll generate professional mockups for mugs, t-shirts, and blankets.
 
+UPDATE: This project won 2nd place at the Fall 2025 HackKentucky Hackathon
+## Contributors
+
+- [@LDIFNA01](https://github.com/LDIFNA01)
+- [@GarretsGitGathering](https://github.com/GarretsGitGathering)
+
 ## Version 0 - Image to Merch
 
-This is Version 0 of the project, focused on demonstrating the core mockup generation workflow. Video processing and AI features are planned for future versions.
+This is Version 0 of the project,  focused on demonstrating the core mockup generation workflow. Video processing and AI features are planned for future versions.
 
 ## Features
 
